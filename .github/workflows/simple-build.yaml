@@ -1,0 +1,46 @@
+name: Build and Push Docker Image to GHCR
+
+# mainブランチにpushされた時に実行されますにゃ！
+on:
+  push:
+    branches: [ "main" ]
+  # 手動でも実行できるようにしておきますにゃん
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    # GitHub Container Registryに書き込む権限を付与しますにゃ
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    # ステップ1: リポジトリのコードを取得しますにゃ
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # ステップ2: GitHub Container Registryにログインしますにゃん
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    # ステップ3: Dockerイメージをビルドしますにゃ
+    - name: Build Docker image
+      run: |
+        docker build . -t ghcr.io/ham-katsu/my-action-docker-image:latest
+        docker build . -t ghcr.io/ham-katsu/my-action-docker-image:${{ github.sha }}
+    
+    # ステップ4: ビルドしたイメージをテストしますにゃん（日付が表示されるはず！）
+    - name: Test Docker image
+      run: docker run ghcr.io/ham-katsu/my-action-docker-image:latest
+    
+    # ステップ5: GitHub Container RegistryにイメージをPushしますにゃ！
+    - name: Push Docker image to GHCR
+      run: |
+        docker push ghcr.io/ham-katsu/my-action-docker-image:latest
+        docker push ghcr.io/ham-katsu/my-action-docker-image:${{ github.sha }}
